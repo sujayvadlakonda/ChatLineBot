@@ -2,20 +2,20 @@ The Chat Line Bot aims to allows developers to create functions for a Slack bot 
 
 Python code is directly evaluated to edit the source code of the bot
 
-HOW TO RUN THE BOT
+## HOW TO RUN THE BOT
 
 In order to make the bot work you must type the following into your terminal
 
-  1. export CHAT_LINE_BOT_TOKEN='Bot User OAuth Access Token'
+1. `export CHAT_LINE_BOT_TOKEN='Bot User OAuth Access Token'`
 
-  2. export WEBSOCKET_CLIENT_CA_BUNDLE=DigiCertGlobalRootCA.crt
+2. `export WEBSOCKET_CLIENT_CA_BUNDLE=DigiCertGlobalRootCA.crt`
 
-  3. python3 bot.py
+3. `python3 bot.py`
 
 
 Commands are differentiated from regular messages by adding an "!" at the beginning
 
-CREATING FUNCTIONS
+## CREATING FUNCTIONS
 
 """
 !def_func FUNCTION_NAME KEY_WORD
