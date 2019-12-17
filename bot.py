@@ -4,7 +4,7 @@ import re
 import requests
 import importlib
 from slackclient import SlackClient
-import commands 
+import commands # The commands.py file
 
 # This file is not included as it is classified information
 # It sets the OAuth and SSL Certificate
@@ -15,8 +15,6 @@ api_dict = {}
 
 # instantiate Slack client
 slack_client = SlackClient(os.environ.get('CHAT_LINE_BOT_TOKEN'))
-# starterbot's user ID in Slack: value is assigned after the bot starts up
-starterbot_id = None
 
 # constants
 # Making this value 0 makes the server overheat
@@ -31,32 +29,21 @@ def parse_bot_commands(slack_events):
     """
     for event in slack_events:
         if event["type"] == "message" and not "subtype" in event:
-            identifier, message = parse_direct_mention(event["text"])
-            # if user_id == starterbot_id:
-            if message:
-                return message, event["channel"]
+            if event["text"][0] == '!':
+                return event["text"][1:], event["channel"]
     return None, None
 
-def parse_direct_mention(message_text):
-    # Checks if the message begins with an exclamation mark
-    return ('!', message_text[1:]) if message_text[0] == '!' else (None, None)
 
 def handle_command(command, channel):
-    """
-        Executes bot command if the command is known
-        Command only contains the message (The @bot part is removed somehow)
-        Actually its because the first method only return the message, not user_id
-    """
-    # Default response is help text for the user
     default_response = "No command was found. Type !help for help"
 
-    # Finds and executes the given command, filling in response
     print('Command is')
     print(command)
     response = None
 
     try:
         response = commands.get_response(command)
+        print(response)
 
         if command.startswith('def_func'):
             lines = command.split("\n")
@@ -69,12 +56,6 @@ def handle_command(command, channel):
 
         # Add a method to handle !help
 
-
-        if command.startswith('add_command'):
-            command_parts = command.split(' ')
-            key_word = command_parts[1]
-            output = command_parts[2]
-            command_dict[key_word] = output
 
         if command.startswith('add_api'):
             command_parts = command.split(' ')
@@ -96,19 +77,13 @@ def handle_command(command, channel):
             response = "Error: " + str(error)
     
 
-    # for key_word, output in command_dict.items():
-    #     if identify_command(command, key_word):
-    #         response = output
-
     # Sends the response back to the channel
     slack_client.api_call(
         "chat.postMessage",
         channel=channel,
         text=response or default_response
     )
-# Looks for the word KEY_WORD anywhere in COMMAND
-def identify_command(command, key_word):
-    return command.startswith(key_word) or command.endswith(key_word) or key_word in command
+
 
 def def_command(function_name, key_word, content):
     print("Function Name: {}".format(function_name))
@@ -121,7 +96,8 @@ def def_command(function_name, key_word, content):
         lines = file.readlines()
 
     with open('commands.py', 'w') as file:
-        lines.insert(10, "    if message.startswith('{}'):\n        {}()\n".format(key_word, function_name))
+        if_statement = "    if message.startswith('{}'):\n        {}()\n"
+        lines.insert(12, if_statement.format(key_word, function_name))
         file.write("".join(lines))
 
     with open('commands.py', 'a') as file:
@@ -129,18 +105,18 @@ def def_command(function_name, key_word, content):
         func_text = "\n\ndef {}():\n    global message\n    global response\n    {}"
         file.write(func_text.format(function_name, "\n    ".join(content)))
 
-    importlib.reload(commands)
+    importlib.reload(commands) # The bot reloads the commands.py file
+                               # Prevents restart of bot to update
+
+
 
 if __name__ == "__main__":
     if slack_client.rtm_connect(with_team_state=False):
         print("Starter Bot connected and running!")
-        # Read bot's user ID by calling Web API method `auth.test`
-        starterbot_id = slack_client.api_call("auth.test")["user_id"]
         while True:
             command, channel = parse_bot_commands(slack_client.rtm_read())
             if command:
                 handle_command(command, channel)
-            time.sleep(RTM_READ_DELAY)
+                time.sleep(RTM_READ_DELAY)
     else:
         print("Connection failed. Exception traceback printed above.")
-
